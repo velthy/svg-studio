@@ -49,7 +49,7 @@ export function OptionsPanel({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b">
+      <div className="flex items-center justify-between px-4 py-3 border-b min-h-[61px]">
         <h2 className="text-sm font-semibold">Optimizations</h2>
         <div className="flex gap-1">
           <Button
