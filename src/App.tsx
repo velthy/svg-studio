@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Header } from '@/components/Header'
@@ -9,6 +9,8 @@ import { CodeView } from '@/components/CodeView'
 import { SplitView } from '@/components/SplitView'
 import { SizeComparison } from '@/components/SizeComparison'
 import { ExportPanel } from '@/components/ExportPanel'
+import { ColorPalette } from '@/components/ColorPalette'
+import { extractColors, applyColorOverrides } from '@/lib/colors'
 import { useTheme } from '@/hooks/useTheme'
 import { useSvgoWorker } from '@/hooks/useSvgoWorker'
 import { getDefaultPluginStates, PLUGINS } from '@/lib/svgo-config'
@@ -22,6 +24,7 @@ export default function App() {
   const [originalSvg, setOriginalSvg] = useState<string | null>(null)
   const [filename, setFilename] = useState<string | undefined>()
   const [pluginStates, setPluginStates] = useState<Record<string, boolean>>(getDefaultPluginStates)
+  const [colorOverrides, setColorOverrides] = useState<Record<string, string>>({})
 
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
@@ -69,10 +72,29 @@ export default function App() {
   const handleReset = useCallback(() => {
     setOriginalSvg(null)
     setFilename(undefined)
+    setColorOverrides({})
   }, [])
 
+  const handleColorChange = useCallback((originalNormalized: string, newColor: string) => {
+    setColorOverrides(prev => ({ ...prev, [originalNormalized]: newColor }))
+  }, [])
+
+  const handleColorReset = useCallback(() => {
+    setColorOverrides({})
+  }, [])
+
+  const extractedColors = useMemo(
+    () => optimizedSvg ? extractColors(optimizedSvg) : [],
+    [optimizedSvg]
+  )
+
+  const modifiedSvg = useMemo(() => {
+    if (!optimizedSvg || Object.keys(colorOverrides).length === 0) return optimizedSvg
+    return applyColorOverrides(optimizedSvg, colorOverrides)
+  }, [optimizedSvg, colorOverrides])
+
   const originalSize = originalSvg ? new Blob([originalSvg]).size : 0
-  const optimizedSize = optimizedSvg ? new Blob([optimizedSvg]).size : 0
+  const optimizedSize = modifiedSvg ? new Blob([modifiedSvg]).size : 0
 
   return (
     <TooltipProvider>
@@ -111,13 +133,13 @@ export default function App() {
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   )}
                 </div>
-                <ExportPanel svg={optimizedSvg} filename={filename} />
+                <ExportPanel svg={modifiedSvg} filename={filename} />
               </div>
 
               {/* Content */}
               <div className="flex-1 flex flex-col overflow-hidden p-6 gap-4">
                 {/* Size comparison */}
-                {optimizedSvg && (
+                {modifiedSvg && (
                   <SizeComparison
                     originalSize={originalSize}
                     optimizedSize={optimizedSize}
@@ -130,10 +152,20 @@ export default function App() {
                   </div>
                 )}
 
+                {/* Color palette */}
+                {extractedColors.length > 0 && (
+                  <ColorPalette
+                    colors={extractedColors}
+                    overrides={colorOverrides}
+                    onColorChange={handleColorChange}
+                    onReset={handleColorReset}
+                  />
+                )}
+
                 {/* Code + Preview split */}
                 <SplitView
-                  top={<CodeView code={optimizedSvg} />}
-                  bottom={<Preview svg={optimizedSvg} className="h-full" />}
+                  top={<CodeView code={modifiedSvg} />}
+                  bottom={<Preview svg={modifiedSvg} className="h-full" />}
                 />
               </div>
             </div>

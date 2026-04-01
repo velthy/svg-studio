@@ -21,7 +21,7 @@ export function Preview({ svg, className = '' }: PreviewProps) {
   }
 
   return (
-    <div className={`relative rounded-lg border bg-[repeating-conic-gradient(var(--color-muted)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px] overflow-hidden ${className}`}>
+    <div className={`relative rounded-lg border bg-[repeating-conic-gradient(#d4d4d4_0%_25%,#fff_0%_50%)] bg-[length:16px_16px] overflow-hidden ${className}`}>
       <img
         src={blobUrl ?? undefined}
         alt="SVG Preview"
