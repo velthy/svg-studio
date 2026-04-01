@@ -101,7 +101,7 @@ export function OptionsPanel({
                     >
                       <Label
                         htmlFor={plugin.id}
-                        className="text-sm cursor-pointer leading-tight flex-1 min-w-0"
+                        className="text-sm font-normal cursor-pointer leading-tight flex-1 min-w-0"
                         title={plugin.description}
                       >
                         {plugin.label}
