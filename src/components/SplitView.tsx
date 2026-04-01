@@ -12,8 +12,8 @@ interface SplitViewProps {
 export function SplitView({
   top,
   bottom,
-  defaultTopHeight = 200,
-  minTopHeight = 80,
+  defaultTopHeight = 56,
+  minTopHeight = 40,
   minBottomHeight = 120,
 }: SplitViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
