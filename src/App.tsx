@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Header } from '@/components/Header'
@@ -16,8 +16,9 @@ import { DetailSheet } from '@/components/DetailSheet'
 import { extractColors, applyColorOverrides, type ColorInfo } from '@/lib/colors'
 import { useTheme } from '@/hooks/useTheme'
 import { useSvgoQueue } from '@/hooks/useSvgoQueue'
+import { useHistory } from '@/hooks/useHistory'
 import { getDefaultPluginStates } from '@/lib/svgo-config'
-import { ArrowLeft, Loader2, Plus } from 'lucide-react'
+import { Loader2, Plus, Undo2, Redo2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface SvgItem {
@@ -38,9 +39,24 @@ export default function App() {
   const { theme, setTheme, resolvedTheme } = useTheme()
 
   const [svgs, setSvgs] = useState<SvgItem[]>([])
-  const [pluginStates, setPluginStates] = useState<Record<string, boolean>>(getDefaultPluginStates)
-  const [colorOverrides, setColorOverrides] = useState<Record<string, string>>({})
   const [detailId, setDetailId] = useState<string | null>(null)
+
+  type EditState = {
+    pluginStates: Record<string, boolean>
+    colorOverrides: Record<string, string>
+  }
+  const {
+    state: editState,
+    set: setEditState,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useHistory<EditState>({
+    pluginStates: getDefaultPluginStates(),
+    colorOverrides: {},
+  })
+  const { pluginStates, colorOverrides } = editState
 
   const svgsRef = useRef(svgs)
   svgsRef.current = svgs
@@ -111,33 +127,47 @@ export default function App() {
   }, [pluginStates, triggerOptimize])
 
   const handlePluginToggle = useCallback((pluginId: string, enabled: boolean) => {
-    setPluginStates(prev => {
-      const next = { ...prev, [pluginId]: enabled }
-      triggerOptimize(svgsRef.current, next)
-      return next
-    })
-  }, [triggerOptimize])
+    setEditState(prev => ({
+      ...prev,
+      pluginStates: { ...prev.pluginStates, [pluginId]: enabled },
+    }))
+  }, [setEditState])
 
   const handleResetDefaults = useCallback(() => {
-    const defaults = getDefaultPluginStates()
-    setPluginStates(defaults)
-    triggerOptimize(svgsRef.current, defaults)
-  }, [triggerOptimize])
-
-  const handleReset = useCallback(() => {
-    cancel()
-    setSvgs([])
-    setColorOverrides({})
-    setDetailId(null)
-  }, [cancel])
+    setEditState(prev => ({ ...prev, pluginStates: getDefaultPluginStates() }))
+  }, [setEditState])
 
   const handleColorChange = useCallback((originalNormalized: string, newColor: string) => {
-    setColorOverrides(prev => ({ ...prev, [originalNormalized]: newColor }))
-  }, [])
+    setEditState(prev => ({
+      ...prev,
+      colorOverrides: { ...prev.colorOverrides, [originalNormalized]: newColor },
+    }))
+  }, [setEditState])
 
   const handleColorReset = useCallback(() => {
-    setColorOverrides({})
-  }, [])
+    setEditState(prev => ({ ...prev, colorOverrides: {} }))
+  }, [setEditState])
+
+  // Trigger re-optimization whenever plugin states change (toggle, reset, undo, redo).
+  // Color overrides don't need re-optimization — they're applied as a post-step.
+  useEffect(() => {
+    if (svgsRef.current.length === 0) return
+    triggerOptimize(svgsRef.current, pluginStates)
+  }, [pluginStates, triggerOptimize])
+
+  // Cmd/Ctrl+Z = undo, Cmd/Ctrl+Shift+Z = redo. Ignored when typing in inputs.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+      e.preventDefault()
+      if (e.shiftKey) redo()
+      else undo()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [undo, redo])
 
   // Aggregate colors across all optimized SVGs (dedupe by normalized hex).
   const extractedColors = useMemo<ColorInfo[]>(() => {
@@ -241,14 +271,33 @@ export default function App() {
               {/* Top bar */}
               <div className="flex items-center justify-between px-6 py-3 border-b">
                 <div className="flex items-center gap-3 min-w-0">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleReset}>
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
                   <span className="text-sm font-medium truncate">
                     {isBulk
                       ? `${svgs.length} files`
                       : single?.filename || 'Pasted SVG'}
                   </span>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={undo}
+                      disabled={!canUndo}
+                      title="Undo (⌘Z)"
+                    >
+                      <Undo2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={redo}
+                      disabled={!canRedo}
+                      title="Redo (⇧⌘Z)"
+                    >
+                      <Redo2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                   {pendingCount > 0 && (
                     <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
