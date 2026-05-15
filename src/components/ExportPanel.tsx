@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Download, Copy, Check, ChevronDown } from 'lucide-react'
+import { Download, Copy, Check, ChevronDown, FileArchive } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -8,14 +8,20 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { EXPORT_OPTIONS, formatSvgForExport, type ExportFormat } from '@/lib/export-formats'
+import { downloadZip, optimizedFilename, type ZipItem } from '@/lib/bulk-export'
+import { toast } from 'sonner'
 
 interface ExportPanelProps {
-  svg: string | null
+  /** Single-file mode: provide svg + filename. */
+  svg?: string | null
   filename?: string
+  /** Bulk mode: provide an array of items. Triggers ZIP download. */
+  bulkItems?: { svg: string; filename: string }[]
 }
 
-export function ExportPanel({ svg, filename }: ExportPanelProps) {
+export function ExportPanel({ svg, filename, bulkItems }: ExportPanelProps) {
   const [copiedFormat, setCopiedFormat] = useState<ExportFormat | null>(null)
+  const [zipping, setZipping] = useState(false)
 
   const handleDownload = useCallback(() => {
     if (!svg) return
@@ -23,7 +29,7 @@ export function ExportPanel({ svg, filename }: ExportPanelProps) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = filename?.replace(/\.svg$/, '') + '-optimized.svg' || 'optimized.svg'
+    a.download = filename ? optimizedFilename(filename) : 'optimized.svg'
     a.click()
     URL.revokeObjectURL(url)
   }, [svg, filename])
@@ -35,6 +41,31 @@ export function ExportPanel({ svg, filename }: ExportPanelProps) {
     setCopiedFormat(format)
     setTimeout(() => setCopiedFormat(null), 2000)
   }, [svg])
+
+  const handleDownloadZip = useCallback(async () => {
+    if (!bulkItems || bulkItems.length === 0) return
+    setZipping(true)
+    try {
+      const zipItems: ZipItem[] = bulkItems.map(item => ({
+        filename: optimizedFilename(item.filename),
+        content: item.svg,
+      }))
+      await downloadZip(zipItems)
+    } catch (err) {
+      toast.error(`ZIP download failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    } finally {
+      setZipping(false)
+    }
+  }, [bulkItems])
+
+  if (bulkItems && bulkItems.length > 0) {
+    return (
+      <Button onClick={handleDownloadZip} disabled={zipping} className="gap-2">
+        <FileArchive className="h-4 w-4" />
+        {zipping ? 'Packing…' : `Download all (${bulkItems.length})`}
+      </Button>
+    )
+  }
 
   if (!svg) return null
 

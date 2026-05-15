@@ -1,34 +1,86 @@
 import { useCallback, useRef, useState } from 'react'
 import { Upload, ClipboardPaste } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 
-interface DropZoneProps {
-  onSvgInput: (svg: string, filename?: string) => void
+export interface SvgInput {
+  svg: string
+  filename: string
 }
 
-export function DropZone({ onSvgInput }: DropZoneProps) {
+interface DropZoneProps {
+  /** Called for one or more uploaded SVGs (drop/file picker). */
+  onSvgsInput: (inputs: SvgInput[]) => void
+  /** Called for pasted SVG code (single only). */
+  onPasteInput: (svg: string) => void
+}
+
+export const MAX_FILES = 50
+const SOFT_SIZE_WARN_BYTES = 2 * 1024 * 1024
+
+async function readFileAsText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => resolve(e.target?.result as string)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsText(file)
+  })
+}
+
+export function DropZone({ onSvgsInput, onPasteInput }: DropZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [showPaste, setShowPaste] = useState(false)
   const [pasteValue, setPasteValue] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFile = useCallback((file: File) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const text = e.target?.result as string
-      if (text && text.includes('<svg')) {
-        onSvgInput(text, file.name)
-      }
+  const handleFiles = useCallback(async (fileList: FileList | File[]) => {
+    const all = Array.from(fileList)
+    if (all.length === 0) return
+
+    let files = all
+    let skippedOver = 0
+    if (files.length > MAX_FILES) {
+      skippedOver = files.length - MAX_FILES
+      files = files.slice(0, MAX_FILES)
     }
-    reader.readAsText(file)
-  }, [onSvgInput])
+
+    const oversized: string[] = []
+    const results = await Promise.all(
+      files.map(async (file) => {
+        try {
+          const text = await readFileAsText(file)
+          if (!text || !text.includes('<svg')) return null
+          if (file.size > SOFT_SIZE_WARN_BYTES) oversized.push(file.name)
+          return { svg: text, filename: file.name } satisfies SvgInput
+        } catch {
+          return null
+        }
+      }),
+    )
+
+    const valid = results.filter((r): r is SvgInput => r !== null)
+    const skippedInvalid = files.length - valid.length
+
+    if (skippedOver > 0) {
+      toast.warning(`Maximum ${MAX_FILES} files — skipped ${skippedOver} extra file${skippedOver > 1 ? 's' : ''}.`)
+    }
+    if (skippedInvalid > 0) {
+      toast.warning(`Skipped ${skippedInvalid} file${skippedInvalid > 1 ? 's' : ''} (not valid SVG).`)
+    }
+    if (oversized.length > 0) {
+      toast.warning(`${oversized.length} file${oversized.length > 1 ? 's are' : ' is'} larger than 2 MB — optimization may be slow.`)
+    }
+
+    if (valid.length > 0) onSvgsInput(valid)
+  }, [onSvgsInput])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setIsDragOver(false)
-    const file = e.dataTransfer.files[0]
-    if (file) handleFile(file)
-  }, [handleFile])
+    if (e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files)
+    }
+  }, [handleFiles])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -42,19 +94,19 @@ export function DropZone({ onSvgInput }: DropZoneProps) {
 
   const handlePasteSubmit = useCallback(() => {
     if (pasteValue.trim() && pasteValue.includes('<svg')) {
-      onSvgInput(pasteValue.trim())
+      onPasteInput(pasteValue.trim())
       setPasteValue('')
       setShowPaste(false)
     }
-  }, [pasteValue, onSvgInput])
+  }, [pasteValue, onPasteInput])
 
   const handleGlobalPaste = useCallback((e: React.ClipboardEvent) => {
     const text = e.clipboardData.getData('text')
     if (text && text.includes('<svg')) {
       e.preventDefault()
-      onSvgInput(text.trim())
+      onPasteInput(text.trim())
     }
-  }, [onSvgInput])
+  }, [onPasteInput])
 
   if (showPaste) {
     return (
@@ -106,20 +158,20 @@ export function DropZone({ onSvgInput }: DropZoneProps) {
         </div>
         <div className="text-center">
           <p className="text-base font-medium">
-            Drop your SVG file here
+            Drop your SVG file(s) here
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            or click to browse
+            or click to browse — up to {MAX_FILES} files
           </p>
         </div>
         <input
           ref={fileInputRef}
           type="file"
-          accept=".svg"
+          accept=".svg,image/svg+xml"
+          multiple
           className="hidden"
           onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) handleFile(file)
+            if (e.target.files && e.target.files.length > 0) handleFiles(e.target.files)
             e.target.value = ''
           }}
         />
@@ -139,7 +191,7 @@ export function DropZone({ onSvgInput }: DropZoneProps) {
       </div>
 
       <p className="text-xs text-muted-foreground mt-4">
-        You can also paste SVG code directly with Ctrl+V / Cmd+V
+        Paste SVG code directly with Ctrl+V / Cmd+V (single file only)
       </p>
     </div>
   )

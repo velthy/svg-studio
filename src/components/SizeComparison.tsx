@@ -3,14 +3,20 @@ import { formatBytes, calculateSavings } from '@/lib/utils'
 interface SizeComparisonProps {
   originalSize: number
   optimizedSize: number
+  label?: string
 }
 
-export function SizeComparison({ originalSize, optimizedSize }: SizeComparisonProps) {
+export function SizeComparison({ originalSize, optimizedSize, label }: SizeComparisonProps) {
   const savings = calculateSavings(originalSize, optimizedSize)
   const ratio = originalSize > 0 ? (optimizedSize / originalSize) * 100 : 100
 
   return (
     <div className="space-y-3">
+      {label && (
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          {label}
+        </p>
+      )}
       <div className="flex items-baseline justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Original</span>
