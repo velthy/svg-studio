@@ -1,5 +1,6 @@
 import * as React from "react"
 import { Switch as SwitchPrimitive } from "radix-ui"
+import { Check } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -23,9 +24,14 @@ function Switch({
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
         className={cn(
-          "pointer-events-none block rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0 dark:data-[state=checked]:bg-primary-foreground dark:data-[state=unchecked]:bg-foreground"
+          "pointer-events-none flex items-center justify-center rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0 dark:data-[state=checked]:bg-primary-foreground dark:data-[state=unchecked]:bg-foreground"
         )}
-      />
+      >
+        <Check
+          className="text-primary opacity-0 transition-opacity group-data-[state=checked]/switch:opacity-100 group-data-[size=default]/switch:size-2.5 group-data-[size=sm]/switch:size-2"
+          strokeWidth={3.5}
+        />
+      </SwitchPrimitive.Thumb>
     </SwitchPrimitive.Root>
   )
 }
