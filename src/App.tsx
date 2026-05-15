@@ -2,7 +2,8 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Header } from '@/components/Header'
-import { DropZone, type SvgInput } from '@/components/DropZone'
+import { DropZone } from '@/components/DropZone'
+import { processSvgFiles, MAX_FILES, type SvgInput } from '@/lib/svg-files'
 import { OptionsPanel } from '@/components/OptionsPanel'
 import { Preview } from '@/components/Preview'
 import { CodeView } from '@/components/CodeView'
@@ -16,7 +17,7 @@ import { extractColors, applyColorOverrides, type ColorInfo } from '@/lib/colors
 import { useTheme } from '@/hooks/useTheme'
 import { useSvgoQueue } from '@/hooks/useSvgoQueue'
 import { getDefaultPluginStates, PLUGINS } from '@/lib/svgo-config'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface SvgItem {
@@ -45,8 +46,9 @@ export default function App() {
   svgsRef.current = svgs
 
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const addFilesInputRef = useRef<HTMLInputElement>(null)
 
-  const { optimizeMany, cancel } = useSvgoQueue({
+  const { optimizeMany, optimizeAppend, cancel } = useSvgoQueue({
     onStart: useCallback((id: string) => {
       setSvgs(prev => prev.map(s => s.id === id ? { ...s, status: 'optimizing' } : s))
     }, []),
@@ -82,12 +84,19 @@ export default function App() {
       optimized: null,
       status: 'pending',
     }))
-    setSvgs(prev => {
-      const merged = [...prev, ...newItems]
-      triggerOptimize(merged, pluginStates)
-      return merged
-    })
-  }, [pluginStates, triggerOptimize])
+    setSvgs(prev => [...prev, ...newItems])
+    // Only optimize the NEW items — existing ones keep their cached result.
+    optimizeAppend(
+      newItems.map(s => ({ id: s.id, svg: s.original })),
+      pluginStates,
+    )
+  }, [pluginStates, optimizeAppend])
+
+  const handleAddFiles = useCallback(async (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return
+    const valid = await processSvgFiles(fileList, svgsRef.current.length)
+    if (valid.length > 0) handleSvgsInput(valid)
+  }, [handleSvgsInput])
 
   const handlePasteInput = useCallback((svg: string) => {
     const item: SvgItem = {
@@ -265,11 +274,33 @@ export default function App() {
                     </span>
                   )}
                 </div>
-                {isBulk ? (
-                  <ExportPanel bulkItems={bulkExportItems} />
-                ) : (
-                  <ExportPanel svg={singleModified} filename={single?.filename} />
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    onClick={() => addFilesInputRef.current?.click()}
+                    disabled={svgs.length >= MAX_FILES}
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add files
+                  </Button>
+                  <input
+                    ref={addFilesInputRef}
+                    type="file"
+                    accept=".svg,image/svg+xml"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      handleAddFiles(e.target.files)
+                      e.target.value = ''
+                    }}
+                  />
+                  {isBulk ? (
+                    <ExportPanel bulkItems={bulkExportItems} />
+                  ) : (
+                    <ExportPanel svg={singleModified} filename={single?.filename} />
+                  )}
+                </div>
               </div>
 
               {/* Content */}

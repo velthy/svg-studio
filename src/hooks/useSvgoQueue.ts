@@ -14,7 +14,10 @@ export interface SvgoQueueCallbacks {
 }
 
 interface UseSvgoQueueResult {
+  /** Replace the queue and start fresh. Cancels any in-flight work. */
   optimizeMany: (jobs: OptimizeJob[], pluginStates: Record<string, boolean>) => void
+  /** Append jobs to the running queue (or start a fresh queue if idle). Does not disturb in-flight work. */
+  optimizeAppend: (jobs: OptimizeJob[], pluginStates: Record<string, boolean>) => void
   cancel: () => void
 }
 
@@ -51,6 +54,7 @@ export function useSvgoQueue(callbacks: SvgoQueueCallbacks): UseSvgoQueueResult 
       if (queue.index < queue.jobs.length) {
         runNext()
       } else {
+        queueRef.current = null
         callbacksRef.current.onDone()
       }
     }
@@ -64,6 +68,7 @@ export function useSvgoQueue(callbacks: SvgoQueueCallbacks): UseSvgoQueueResult 
       if (queue.index < queue.jobs.length) {
         runNext()
       } else {
+        queueRef.current = null
         callbacksRef.current.onDone()
       }
     }
@@ -104,5 +109,17 @@ export function useSvgoQueue(callbacks: SvgoQueueCallbacks): UseSvgoQueueResult 
     runNext()
   }, [runNext])
 
-  return { optimizeMany, cancel }
+  const optimizeAppend = useCallback((jobs: OptimizeJob[], pluginStates: Record<string, boolean>) => {
+    if (jobs.length === 0) return
+    const queue = queueRef.current
+    if (queue && queue.index < queue.jobs.length) {
+      // Queue is still running — push and let runNext pick them up.
+      queue.jobs.push(...jobs)
+    } else {
+      // Idle: start a fresh queue with current plugin states.
+      optimizeMany(jobs, pluginStates)
+    }
+  }, [optimizeMany])
+
+  return { optimizeMany, optimizeAppend, cancel }
 }
