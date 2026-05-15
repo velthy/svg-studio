@@ -4,22 +4,18 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { RotateCcw, ToggleLeft, ToggleRight } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 
 interface OptionsPanelProps {
   pluginStates: Record<string, boolean>
   onPluginToggle: (pluginId: string, enabled: boolean) => void
   onResetDefaults: () => void
-  onEnableAll: () => void
-  onDisableAll: () => void
 }
 
 export function OptionsPanel({
   pluginStates,
   onPluginToggle,
   onResetDefaults,
-  onEnableAll,
-  onDisableAll,
 }: OptionsPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollDown, setCanScrollDown] = useState(false)
@@ -51,35 +47,15 @@ export function OptionsPanel({
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b min-h-[61px]">
         <h2 className="text-sm font-semibold">Optimizations</h2>
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={onEnableAll}
-            title="Enable all"
-          >
-            <ToggleRight className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={onDisableAll}
-            title="Disable all"
-          >
-            <ToggleLeft className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={onResetDefaults}
-            title="Reset to defaults"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={onResetDefaults}
+          title="Reset to defaults"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+        </Button>
       </div>
 
       <div className="relative flex-1 min-h-0">

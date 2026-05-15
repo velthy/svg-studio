@@ -16,7 +16,7 @@ import { DetailSheet } from '@/components/DetailSheet'
 import { extractColors, applyColorOverrides, type ColorInfo } from '@/lib/colors'
 import { useTheme } from '@/hooks/useTheme'
 import { useSvgoQueue } from '@/hooks/useSvgoQueue'
-import { getDefaultPluginStates, PLUGINS } from '@/lib/svgo-config'
+import { getDefaultPluginStates } from '@/lib/svgo-config'
 import { ArrowLeft, Loader2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -122,20 +122,6 @@ export default function App() {
     const defaults = getDefaultPluginStates()
     setPluginStates(defaults)
     triggerOptimize(svgsRef.current, defaults)
-  }, [triggerOptimize])
-
-  const handleEnableAll = useCallback(() => {
-    const all: Record<string, boolean> = {}
-    for (const p of PLUGINS) all[p.id] = true
-    setPluginStates(all)
-    triggerOptimize(svgsRef.current, all)
-  }, [triggerOptimize])
-
-  const handleDisableAll = useCallback(() => {
-    const none: Record<string, boolean> = {}
-    for (const p of PLUGINS) none[p.id] = false
-    setPluginStates(none)
-    triggerOptimize(svgsRef.current, none)
   }, [triggerOptimize])
 
   const handleReset = useCallback(() => {
@@ -247,8 +233,6 @@ export default function App() {
                 pluginStates={pluginStates}
                 onPluginToggle={handlePluginToggle}
                 onResetDefaults={handleResetDefaults}
-                onEnableAll={handleEnableAll}
-                onDisableAll={handleDisableAll}
               />
             </aside>
 
