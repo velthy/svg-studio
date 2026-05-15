@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react'
 import { RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import type { ColorInfo } from '@/lib/colors'
 
 interface ColorPaletteProps {
@@ -54,40 +55,65 @@ interface ColorSwatchProps {
 function ColorSwatch({ color, currentColor, onChange }: ColorSwatchProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const handleClick = useCallback(() => {
+  const handlePickerClick = useCallback(() => {
     inputRef.current?.click()
   }, [])
 
+  const isCurrentColor = currentColor === 'currentColor'
   const isModified = currentColor !== color.normalized
 
+  const handleToggleCurrentColor = useCallback(() => {
+    onChange(isCurrentColor ? color.normalized : 'currentColor')
+  }, [isCurrentColor, color.normalized, onChange])
+
   return (
-    <button
-      onClick={handleClick}
-      className={`
-        group relative flex items-center gap-2 rounded-md border px-2 py-1.5
-        transition-colors hover:bg-muted/50
-        ${isModified ? 'border-primary/50 bg-primary/5' : 'border-border'}
-      `}
-      title={`${color.original} (${color.count}x) — click to change`}
+    <div
+      className={cn(
+        'group relative flex items-center rounded-md border overflow-hidden transition-colors',
+        isModified ? 'border-primary/50 bg-primary/5' : 'border-border',
+      )}
     >
-      <div
-        className="h-5 w-5 rounded border border-border/50 shrink-0"
-        style={{ backgroundColor: currentColor }}
-      />
-      <span className="text-xs font-mono text-muted-foreground">
-        {currentColor}
-      </span>
-      <span className="text-[10px] text-muted-foreground/60">
-        {color.count}x
-      </span>
-      <input
-        ref={inputRef}
-        type="color"
-        value={currentColor}
-        onChange={(e) => onChange(e.target.value)}
-        className="absolute inset-0 opacity-0 cursor-pointer"
-        tabIndex={-1}
-      />
-    </button>
+      <button
+        type="button"
+        onClick={handlePickerClick}
+        className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/50 transition-colors"
+        title={`${color.original} (${color.count}x) — click to change`}
+      >
+        <div
+          className={cn(
+            'relative h-5 w-5 rounded border border-border/50 shrink-0 overflow-hidden',
+            isCurrentColor && 'bg-[repeating-linear-gradient(45deg,var(--muted-foreground)_0_2px,transparent_2px_5px)]',
+          )}
+          style={isCurrentColor ? undefined : { backgroundColor: currentColor }}
+        />
+        <span className="text-xs font-mono text-muted-foreground">
+          {isCurrentColor ? 'currentColor' : currentColor}
+        </span>
+        <span className="text-[10px] text-muted-foreground/60">
+          {color.count}x
+        </span>
+        <input
+          ref={inputRef}
+          type="color"
+          value={isCurrentColor ? color.normalized : currentColor}
+          onChange={(e) => onChange(e.target.value)}
+          className="absolute inset-0 opacity-0 pointer-events-none"
+          tabIndex={-1}
+        />
+      </button>
+      <button
+        type="button"
+        onClick={handleToggleCurrentColor}
+        className={cn(
+          'h-full px-2 py-1.5 border-l text-[10px] font-mono font-medium transition-colors',
+          isCurrentColor
+            ? 'bg-primary/10 text-primary border-primary/30'
+            : 'text-muted-foreground/60 hover:bg-muted/50 hover:text-foreground',
+        )}
+        title={isCurrentColor ? 'Reset to original color' : 'Use currentColor (inherits from CSS)'}
+      >
+        CC
+      </button>
+    </div>
   )
 }
