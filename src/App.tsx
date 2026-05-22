@@ -15,8 +15,10 @@ import { ThumbnailGrid, type ThumbnailItem } from '@/components/ThumbnailGrid'
 import { DetailSheet } from '@/components/DetailSheet'
 import { extractColors, applyColorOverrides, type ColorInfo } from '@/lib/colors'
 import { useTheme } from '@/hooks/useTheme'
+import { usePrimaryColor } from '@/hooks/usePrimaryColor'
 import { useSvgoQueue } from '@/hooks/useSvgoQueue'
 import { useHistory } from '@/hooks/useHistory'
+import { SettingsDialog } from '@/components/SettingsDialog'
 import { getDefaultPluginStates } from '@/lib/svgo-config'
 import { Loader2, Plus, Undo2, Redo2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -36,10 +38,12 @@ function makeId(): string {
 }
 
 export default function App() {
-  const { theme, setTheme, resolvedTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
+  const { color: primaryColor, setColor: setPrimaryColor } = usePrimaryColor()
 
   const [svgs, setSvgs] = useState<SvgItem[]>([])
   const [detailId, setDetailId] = useState<string | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   type EditState = {
     pluginStates: Record<string, boolean>
@@ -272,11 +276,9 @@ export default function App() {
     <TooltipProvider>
       <div className="flex flex-col h-screen overflow-hidden">
         <Header
-          theme={theme}
-          setTheme={setTheme}
-          resolvedTheme={resolvedTheme}
           onReset={handleResetAll}
           canReset={canReset}
+          onOpenSettings={() => setSettingsOpen(true)}
         />
 
         {isEmpty ? (
@@ -328,7 +330,7 @@ export default function App() {
                   </div>
                   {pendingCount > 0 && (
                     <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
                       {isBulk
                         ? `Optimizing ${svgs.length - pendingCount + 1}/${svgs.length}…`
                         : 'Optimizing…'}
@@ -421,6 +423,14 @@ export default function App() {
           />
         )}
       </div>
+      <SettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        theme={theme}
+        setTheme={setTheme}
+        primaryColor={primaryColor}
+        setPrimaryColor={setPrimaryColor}
+      />
       <Toaster />
     </TooltipProvider>
   )

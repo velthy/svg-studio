@@ -84,7 +84,7 @@ function ThumbnailCard({ item, selected, onSelect }: ThumbnailCardProps) {
         ) : null}
         {isPending && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-[1px]">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
           </div>
         )}
       </div>

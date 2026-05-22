@@ -1,22 +1,14 @@
-import { Moon, Sun, Monitor, RotateCw } from 'lucide-react'
+import { RotateCw, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface HeaderProps {
-  theme: 'light' | 'dark' | 'system'
-  setTheme: (theme: 'light' | 'dark' | 'system') => void
-  resolvedTheme: 'light' | 'dark'
   onReset: () => void
   canReset: boolean
+  onOpenSettings: () => void
 }
 
-export function Header({ theme, setTheme, resolvedTheme, onReset, canReset }: HeaderProps) {
+export function Header({ onReset, canReset, onOpenSettings }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-6 py-4 border-b">
       <div className="flex items-center gap-3">
@@ -60,35 +52,20 @@ export function Header({ theme, setTheme, resolvedTheme, onReset, canReset }: He
           <TooltipContent>Reset everything</TooltipContent>
         </Tooltip>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              {resolvedTheme === 'dark' ? (
-                <Moon className="h-4 w-4" />
-              ) : (
-                <Sun className="h-4 w-4" />
-              )}
-              <span className="sr-only">Toggle theme</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={onOpenSettings}
+            >
+              <Settings className="h-4 w-4" />
+              <span className="sr-only">Settings</span>
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setTheme('light')}>
-              <Sun className="mr-2 h-4 w-4" />
-              Light
-              {theme === 'light' && <span className="ml-auto text-xs text-muted-foreground">Active</span>}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme('dark')}>
-              <Moon className="mr-2 h-4 w-4" />
-              Dark
-              {theme === 'dark' && <span className="ml-auto text-xs text-muted-foreground">Active</span>}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme('system')}>
-              <Monitor className="mr-2 h-4 w-4" />
-              System
-              {theme === 'system' && <span className="ml-auto text-xs text-muted-foreground">Active</span>}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </TooltipTrigger>
+          <TooltipContent>Settings</TooltipContent>
+        </Tooltip>
       </div>
     </header>
   )
