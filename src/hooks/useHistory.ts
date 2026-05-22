@@ -11,6 +11,8 @@ export interface UseHistoryResult<T> {
   set: (next: T | ((prev: T) => T)) => void
   /** Replace present without creating a history entry. Use for non-user-facing state corrections. */
   replace: (next: T | ((prev: T) => T)) => void
+  /** Drop past/future and set the present — equivalent to remounting with a new initial value. */
+  reset: (value: T) => void
   undo: () => void
   redo: () => void
   canUndo: boolean
@@ -43,6 +45,10 @@ export function useHistory<T>(initial: T): UseHistoryResult<T> {
     })
   }, [])
 
+  const reset = useCallback((value: T) => {
+    setHistory({ past: [], present: value, future: [] })
+  }, [])
+
   const undo = useCallback(() => {
     setHistory(({ past, present, future }) => {
       if (past.length === 0) return { past, present, future }
@@ -71,6 +77,7 @@ export function useHistory<T>(initial: T): UseHistoryResult<T> {
     state: history.present,
     set,
     replace,
+    reset,
     undo,
     redo,
     canUndo: history.past.length > 0,

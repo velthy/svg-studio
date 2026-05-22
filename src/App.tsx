@@ -48,6 +48,7 @@ export default function App() {
   const {
     state: editState,
     set: setEditState,
+    reset: resetEditState,
     undo,
     redo,
     canUndo,
@@ -147,6 +148,27 @@ export default function App() {
   const handleColorReset = useCallback(() => {
     setEditState(prev => ({ ...prev, colorOverrides: {} }))
   }, [setEditState])
+
+  const handleResetAll = useCallback(() => {
+    cancel()
+    clearTimeout(debounceRef.current)
+    setSvgs([])
+    setDetailId(null)
+    resetEditState({
+      pluginStates: getDefaultPluginStates(),
+      colorOverrides: {},
+    })
+  }, [cancel, resetEditState])
+
+  const hasDefaultEditState =
+    Object.keys(colorOverrides).length === 0 &&
+    (() => {
+      const defaults = getDefaultPluginStates()
+      const keys = Object.keys(defaults)
+      if (Object.keys(pluginStates).length !== keys.length) return false
+      return keys.every(k => pluginStates[k] === defaults[k])
+    })()
+  const canReset = svgs.length > 0 || !hasDefaultEditState || canUndo || canRedo
 
   // Trigger re-optimization whenever plugin states change (toggle, reset, undo, redo).
   // Color overrides don't need re-optimization — they're applied as a post-step.
@@ -249,7 +271,13 @@ export default function App() {
   return (
     <TooltipProvider>
       <div className="flex flex-col h-screen overflow-hidden">
-        <Header theme={theme} setTheme={setTheme} resolvedTheme={resolvedTheme} />
+        <Header
+          theme={theme}
+          setTheme={setTheme}
+          resolvedTheme={resolvedTheme}
+          onReset={handleResetAll}
+          canReset={canReset}
+        />
 
         {isEmpty ? (
           <main className="flex-1 flex items-center justify-center">
