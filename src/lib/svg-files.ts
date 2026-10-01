@@ -5,7 +5,7 @@ export interface SvgInput {
   filename: string
 }
 
-export const MAX_FILES = 50
+export const MAX_FILES = 64
 const SOFT_SIZE_WARN_BYTES = 2 * 1024 * 1024
 
 function readFileAsText(file: File): Promise<string> {
