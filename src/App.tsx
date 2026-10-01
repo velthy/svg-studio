@@ -16,6 +16,7 @@ import { DetailSheet } from '@/components/DetailSheet'
 import { extractColors, applyColorOverrides, type ColorInfo } from '@/lib/colors'
 import { useTheme } from '@/hooks/useTheme'
 import { usePrimaryColor } from '@/hooks/usePrimaryColor'
+import { useDownloadSettings } from '@/hooks/useDownloadSettings'
 import { useSvgoQueue } from '@/hooks/useSvgoQueue'
 import { useHistory } from '@/hooks/useHistory'
 import { SettingsDialog } from '@/components/SettingsDialog'
@@ -40,6 +41,7 @@ function makeId(): string {
 export default function App() {
   const { theme, setTheme } = useTheme()
   const { color: primaryColor, setColor: setPrimaryColor } = usePrimaryColor()
+  const { optimizedSuffix, setOptimizedSuffix } = useDownloadSettings()
 
   const [svgs, setSvgs] = useState<SvgItem[]>([])
   const [detailId, setDetailId] = useState<string | null>(null)
@@ -359,9 +361,9 @@ export default function App() {
                     }}
                   />
                   {isBulk ? (
-                    <ExportPanel bulkItems={bulkExportItems} />
+                    <ExportPanel bulkItems={bulkExportItems} optimizedSuffix={optimizedSuffix} />
                   ) : (
-                    <ExportPanel svg={singleModified} filename={single?.filename} />
+                    <ExportPanel svg={singleModified} filename={single?.filename} optimizedSuffix={optimizedSuffix} />
                   )}
                 </div>
               </div>
@@ -420,6 +422,7 @@ export default function App() {
             displaySvg={detailModified}
             originalSize={detailOriginalSize}
             optimizedSize={detailOptimizedSize}
+            optimizedSuffix={optimizedSuffix}
           />
         )}
       </div>
@@ -430,6 +433,8 @@ export default function App() {
         setTheme={setTheme}
         primaryColor={primaryColor}
         setPrimaryColor={setPrimaryColor}
+        optimizedSuffix={optimizedSuffix}
+        setOptimizedSuffix={setOptimizedSuffix}
       />
       <Toaster />
     </TooltipProvider>

@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import { PRESET_PRIMARY_COLORS } from '@/hooks/usePrimaryColor'
 import { cn } from '@/lib/utils'
 
@@ -22,6 +23,8 @@ interface SettingsDialogProps {
   setTheme: (theme: Theme) => void
   primaryColor: string | null
   setPrimaryColor: (color: string | null) => void
+  optimizedSuffix: boolean
+  setOptimizedSuffix: (value: boolean) => void
 }
 
 const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
@@ -41,6 +44,8 @@ export function SettingsDialog({
   setTheme,
   primaryColor,
   setPrimaryColor,
+  optimizedSuffix,
+  setOptimizedSuffix,
 }: SettingsDialogProps) {
   const [customInput, setCustomInput] = useState(primaryColor ?? '#000000')
 
@@ -63,7 +68,7 @@ export function SettingsDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
-          <DialogDescription>Customize the appearance of SVG Studio.</DialogDescription>
+          <DialogDescription>Customize SVG Studio.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
@@ -142,6 +147,29 @@ export function SettingsDialog({
               placeholder="#000000"
               className="h-9 w-32 rounded-md border bg-background px-3 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Custom hex color"
+            />
+          </div>
+        </div>
+
+        <Separator />
+
+        <div className="space-y-3">
+          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Downloads
+          </Label>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <Label htmlFor="settings-optimized-suffix" className="text-sm">
+                Add “-optimized” to file names
+              </Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {optimizedSuffix ? 'icon.svg → icon-optimized.svg' : 'icon.svg → icon.svg'}
+              </p>
+            </div>
+            <Switch
+              id="settings-optimized-suffix"
+              checked={optimizedSuffix}
+              onCheckedChange={setOptimizedSuffix}
             />
           </div>
         </div>

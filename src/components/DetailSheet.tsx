@@ -14,6 +14,7 @@ interface DetailSheetProps {
   displaySvg: string | null
   originalSize: number
   optimizedSize: number
+  optimizedSuffix: boolean
 }
 
 export function DetailSheet({
@@ -23,6 +24,7 @@ export function DetailSheet({
   displaySvg,
   originalSize,
   optimizedSize,
+  optimizedSuffix,
 }: DetailSheetProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -43,7 +45,7 @@ export function DetailSheet({
               </Dialog.Description>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <ExportPanel svg={displaySvg} filename={filename} />
+              <ExportPanel svg={displaySvg} filename={filename} optimizedSuffix={optimizedSuffix} />
               <Dialog.Close asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
                   <X className="h-4 w-4" />

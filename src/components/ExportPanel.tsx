@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { EXPORT_OPTIONS, formatSvgForExport, type ExportFormat } from '@/lib/export-formats'
-import { downloadZip, optimizedFilename, type ZipItem } from '@/lib/bulk-export'
+import { downloadZip, downloadFilename, type ZipItem } from '@/lib/bulk-export'
 import { toast } from 'sonner'
 
 interface ExportPanelProps {
@@ -17,9 +17,11 @@ interface ExportPanelProps {
   filename?: string
   /** Bulk mode: provide an array of items. Triggers ZIP download. */
   bulkItems?: { svg: string; filename: string }[]
+  /** Append `-optimized` to downloaded file names (and the ZIP name). */
+  optimizedSuffix?: boolean
 }
 
-export function ExportPanel({ svg, filename, bulkItems }: ExportPanelProps) {
+export function ExportPanel({ svg, filename, bulkItems, optimizedSuffix = true }: ExportPanelProps) {
   const [copiedFormat, setCopiedFormat] = useState<ExportFormat | null>(null)
   const [zipping, setZipping] = useState(false)
 
@@ -29,10 +31,12 @@ export function ExportPanel({ svg, filename, bulkItems }: ExportPanelProps) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = filename ? optimizedFilename(filename) : 'optimized.svg'
+    a.download = filename
+      ? downloadFilename(filename, optimizedSuffix)
+      : optimizedSuffix ? 'optimized.svg' : 'image.svg'
     a.click()
     URL.revokeObjectURL(url)
-  }, [svg, filename])
+  }, [svg, filename, optimizedSuffix])
 
   const handleCopy = useCallback(async (format: ExportFormat) => {
     if (!svg) return
@@ -47,16 +51,16 @@ export function ExportPanel({ svg, filename, bulkItems }: ExportPanelProps) {
     setZipping(true)
     try {
       const zipItems: ZipItem[] = bulkItems.map(item => ({
-        filename: optimizedFilename(item.filename),
+        filename: downloadFilename(item.filename, optimizedSuffix),
         content: item.svg,
       }))
-      await downloadZip(zipItems)
+      await downloadZip(zipItems, optimizedSuffix ? 'svgs-optimized.zip' : 'svgs.zip')
     } catch (err) {
       toast.error(`ZIP download failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setZipping(false)
     }
-  }, [bulkItems])
+  }, [bulkItems, optimizedSuffix])
 
   if (bulkItems && bulkItems.length > 0) {
     return (

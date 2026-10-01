@@ -32,8 +32,9 @@ export async function downloadZip(items: ZipItem[], zipName = 'svgs-optimized.zi
   URL.revokeObjectURL(url)
 }
 
-export function optimizedFilename(original: string): string {
+export function downloadFilename(original: string, withSuffix: boolean): string {
+  const suffix = withSuffix ? '-optimized' : ''
   const dot = original.toLowerCase().lastIndexOf('.svg')
-  if (dot > 0) return `${original.slice(0, dot)}-optimized.svg`
-  return `${original}-optimized.svg`
+  if (dot > 0) return `${original.slice(0, dot)}${suffix}.svg`
+  return `${original}${suffix}.svg`
 }
