@@ -33,6 +33,16 @@ npm run build
 
 The production build is output to `dist/`.
 
+## Deployment
+
+Deployed on [Railway](https://railway.com/), which builds and deploys every push to `main`.
+
+- `railway.json`: build with [Railpack](https://railpack.com/) and use `/health` as the deploy health check.
+- `Caddyfile`: Railpack serves `dist/` with Caddy. This replaces Railpack's default config with the same setup, plus long-lived cache headers for the content-hashed files in `/assets`. `{{.DIST_DIR}}` and `{{.IndexFallback}}` are filled in by Railpack at build time.
+- Node version: taken from `engines.node` in `package.json`.
+
+No environment variables are needed.
+
 ## License
 
 MIT
